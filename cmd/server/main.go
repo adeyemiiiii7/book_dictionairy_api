@@ -32,10 +32,7 @@ func main() {
 		log.Fatal("Failed to run migrations:", err)
 	}
 
-	// Seed initial data (for development)
-	if err := database.SeedData(); err != nil {
-		log.Fatal("Failed to seed data:", err)
-	}
+	// Database is ready - no seeding needed in production
 
 	// Initialize dependencies using dependency injection
 	db := database.GetDB()
@@ -60,7 +57,7 @@ func main() {
 	// Initialize Gin router
 	router := gin.Default()
 
-	// Public routes (no authentication required)
+	
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "message": "Book Dictionary API is running"})
 	})
@@ -68,40 +65,40 @@ func main() {
 	// Authentication routes
 	authRoutes := router.Group("/auth")
 	{
-		authRoutes.POST("/register", authHandler.Register)           // POST /auth/register
-		authRoutes.POST("/login", authHandler.Login)                // POST /auth/login
-		authRoutes.POST("/refresh", authHandler.RefreshToken)       // POST /auth/refresh
+		authRoutes.POST("/register", authHandler.Register)          
+		authRoutes.POST("/login", authHandler.Login)               
+		authRoutes.POST("/refresh", authHandler.RefreshToken)       
 		
 		// Protected auth routes (require authentication)
 		protected := authRoutes.Group("", middleware.AuthMiddleware(jwtManager))
 		{
-			protected.GET("/profile", authHandler.GetProfile)           // GET /auth/profile
-			protected.POST("/change-password", authHandler.ChangePassword) // POST /auth/change-password
+			protected.GET("/profile", authHandler.GetProfile)           
+			protected.POST("/change-password", authHandler.ChangePassword) 
 		}
 	}
 
 	// Book routes (require authentication)
 	bookRoutes := router.Group("/books", middleware.AuthMiddleware(jwtManager))
 	{
-		bookRoutes.GET("", bookHandler.GetBooks)                    // GET /books (all users)
-		bookRoutes.GET("/:id", bookHandler.GetBookByID)             // GET /books/:id (all users)
+		bookRoutes.GET("", bookHandler.GetBooks)                    	
+		bookRoutes.GET("/:id", bookHandler.GetBookByID)             
 		
 		// Admin-only book routes
 		adminBookRoutes := bookRoutes.Group("", middleware.AdminMiddleware())
 		{
-			adminBookRoutes.POST("", bookHandler.CreateBook)                 // POST /books (admin only)
-			adminBookRoutes.PUT("/:id", bookHandler.UpdateBook)              // PUT /books/:id (admin only)
-			adminBookRoutes.DELETE("/:id", bookHandler.DeleteBook)           // DELETE /books/:id (admin only)
-			adminBookRoutes.PATCH("/:id/quantity", bookHandler.UpdateBookQuantity) // PATCH /books/:id/quantity (admin only)
+			adminBookRoutes.POST("", bookHandler.CreateBook)                 
+			adminBookRoutes.PUT("/:id", bookHandler.UpdateBook)              
+			adminBookRoutes.DELETE("/:id", bookHandler.DeleteBook)           
+			adminBookRoutes.PATCH("/:id/quantity", bookHandler.UpdateBookQuantity) 
 		}
 	}
 
 	// User management routes (admin only)
 	userRoutes := router.Group("/users", middleware.AuthMiddleware(jwtManager), middleware.AdminMiddleware())
 	{
-		userRoutes.GET("", userHandler.GetAllUsers)                 // GET /users (admin only)
-		userRoutes.GET("/:id", userHandler.GetUserByID)             // GET /users/:id (admin only)
-		userRoutes.PATCH("/:id/role", userHandler.UpdateUserRole)   // PATCH /users/:id/role (admin only)
+		userRoutes.GET("", userHandler.GetAllUsers)                 
+		userRoutes.GET("/:id", userHandler.GetUserByID)             
+		userRoutes.PATCH("/:id/role", userHandler.UpdateUserRole)   
 	}
 
 	// Start server
